@@ -325,12 +325,47 @@ void MultiVehicleManager::_sendGCSHeartbeat()
             MAV_MODE_MANUAL_ARMED,
             0,
             MAV_STATE_ACTIVE
-        );
+            );
 
         uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
         const uint16_t len = mavlink_msg_to_send_buffer(buffer, &message);
         (void) link->writeBytesThreadSafe(reinterpret_cast<const char*>(buffer), len);
     }
+}
+
+void MultiVehicleManager::selectVehicle(int vehicleId)
+{
+    if(!_vehicleSelected(vehicleId)) {
+        Vehicle *const vehicle = getVehicleById(vehicleId);
+        _selectedVehicles->append(vehicle);
+    }
+}
+
+void MultiVehicleManager::deselectVehicle(int vehicleId)
+{
+    for (int i = 0; i < _selectedVehicles->count(); i++) {
+        Vehicle *const vehicle = qobject_cast<Vehicle*>(_vehicles->get(i));
+        if (vehicle->id() == vehicleId) {
+            _selectedVehicles->removeAt(i);
+            return;
+        }
+    }
+}
+
+void MultiVehicleManager::deselectAllVehicles()
+{
+    _selectedVehicles->clear();
+}
+
+bool MultiVehicleManager::_vehicleSelected(int vehicleId)
+{
+    for (int i = 0; i < _selectedVehicles->count(); i++) {
+        Vehicle *const vehicle = qobject_cast<Vehicle*>(_vehicles->get(i));
+        if (vehicle->id() == vehicleId) {
+            return true;
+        }
+    }
+    return false;
 }
 
 Vehicle *MultiVehicleManager::getVehicleById(int vehicleId) const
